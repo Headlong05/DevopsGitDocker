@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
+
 import psycopg2
 
 app = FastAPI()
@@ -12,16 +13,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 def create_table():
     conn = psycopg2.connect(
+        # host='localhost',
         host='db',
         user='artem',
         password='123',
         database='postgres'
     )
     cur = conn.cursor()
-
+    
     cur.execute("""DROP TABLE IF EXISTS students;""")
 
     cur.execute("""CREATE TABLE IF NOT EXISTS students 
@@ -30,7 +31,7 @@ def create_table():
         age INTEGER, 
         major VARCHAR(50))
     """)
-
+    
     cur.execute("""INSERT INTO students (name, age, major) VALUES
         ('Алиса', 20, 'Computer Science'),
         ('Александр', 22, 'Mathematics'),
@@ -38,22 +39,21 @@ def create_table():
         ('Диана', 23, 'Chemistry'),
         ('Даша', 20, 'Biology');
     """)
-
+    
     conn.commit()
     cur.close()
     conn.close()
-
+    
     print('Таблица создана')
-
-
+    
 @app.on_event("startup")
 def startup():
     create_table()
 
-
 @app.get("/search")
-async def search(query: str = None):
+async def search(query: str):
     conn = psycopg2.connect(
+        # host='localhost',
         host='db',
         user='artem',
         password='123',
@@ -61,11 +61,7 @@ async def search(query: str = None):
     )
     cur = conn.cursor()
 
-    if query:
-        cur.execute("SELECT * FROM students WHERE name LIKE %s", (f"%{query.capitalize()}%",))
-    else:
-        cur.execute("SELECT * FROM students")
-
+    cur.execute("SELECT * FROM students WHERE name LIKE %s", (query.capitalize(),))
     data = cur.fetchall()
 
     cur.close()
